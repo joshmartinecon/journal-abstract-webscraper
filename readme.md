@@ -4,7 +4,7 @@
   - I am time constrained
   - I am dyslexic
   
-Converting the text from newly released academic papers to audio helps solve all of these issues for me.
+Converting the text from newly released academic papers to audio helps ameliorate these issues.
 
 # The Solution
 
