@@ -366,32 +366,81 @@ helps ameliorate these issues.</p>
 <h1>The Solution</h1>
 <p>I’ve attached some code in R that I use to web scrape the text of the
 titles, authors and abstracts from issues that have recently been
-published in AEA journals. The code accomplishes two things:</p>
+published in various academic journals. The code accomplishes three
+things:</p>
 <ol style="list-style-type: decimal">
 <li>Web scrapes and compiles the aforementioned text into one text
 file</li>
-<li>(Optional) Opens the articles in your web browser</li>
+<li>(Optional) Opens the articles in your web browser if you want to
+read along</li>
+<li>(Optional; not yet fully implemented) Converts the text to audio
+files</li>
 </ol>
-<p>I have the output listed as a text file since it can be easily
-converted to an MP3 from this stage. There are many applications that
-one can use for this. My current favorite is <a href="https://www.cross-plus-a.com/balabolka.htm">balabolka</a> because
-it is free to use, has a desktop application, and allows me to control
-the speed of the MP3 text-to-voice.</p>
-<p>Opening the articles in a web browser can be nice if you would like
-to read along as the MP3 plays.</p>
-<div id="using-this-code" class="section level2">
-<h2>Using this code</h2>
-<ol style="list-style-type: decimal">
-<li>Input the URL for the AEA journal issue you want to read</li>
-<li>Change the working directory for where you want the text file
-placed</li>
-<li>Determine whether you want R to open the articles from this issue in
-a web browser</li>
-</ol>
-<p>Examples are provided in the code.</p>
-<p><a href="https://github.com/joshmartinecon/aea-abstract-web-scraper/blob/main/aea%20abstract%20webscraper.R">Source
-Code</a></p>
+<div id="selenium-webdriver" class="section level2">
+<h2>Selenium WebDriver</h2>
+<p>Some of the code requires <a href="https://cran.r-project.org/web/packages/RSelenium/index.html">RSelenium</a>.
+Depending upon the browser you wish to use for this, you may need to
+install other programs such as <a href="https://github.com/mozilla/geckodriver">geckodriver</a> or <a href="https://github.com/SeleniumHQ/docker-selenium">docker-selenium</a>.
+The code I provide uses Firefox but can be easily adjusted to use
+browsers such as Google Chrome if desired.</p>
 </div>
+<div id="mp3" class="section level2">
+<h2>MP3</h2>
+<p>Input is minimal by design, but the mp3 options require more work
+beforehand.</p>
+<ol style="list-style-type: decimal">
+<li><p>You will need to install <a href="https://www.python.org/downloads/">Python</a> for the <a href="https://pypi.org/project/gTTS/">Google Text-to-Speech</a> (“gTTS”)
+package</p></li>
+<li><p>Install gTTS by running the following command in your system’s
+command-line interface.</p></li>
+</ol>
+<pre class="bash"><code>py -m pip install gTTS</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li>Install the python interface package “<a href="https://cran.r-project.org/web/packages/reticulate/index.html">reticulate</a>”
+in R.</li>
+</ol>
+<pre class="r"><code>install.package(&quot;reticulate&quot;)
+library(reticulate)</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li>Convert the text to mp3 in R.</li>
+</ol>
+<pre class="r"><code>gTTS &lt;- import(&quot;gtts&quot;)
+tts &lt;- gTTS$gTTS(paste(unlist(text), collapse = &quot; &quot;), lang = &quot;en&quot;)
+tts$save(&quot;output.mp3&quot;)</code></pre>
+<p><strong>Continue along if you would like to speed up this audio
+output.</strong></p>
+<ol start="5" style="list-style-type: decimal">
+<li><p>Download <a href="https://www.gyan.dev/ffmpeg/builds/">ffmpeg</a>. I chose the
+“ffmpeg-git-essentials.7z” file. Extract it. Rename the folder “ffmpeg”
+for simplicity. Place this folder somewhere it will be easy to find. (I
+provide an example in steps 6 and 7.)</p></li>
+<li><p>Add ffmpeg to the PATH.</p>
+<ol style="list-style-type: lower-alpha">
+<li>Open the <strong>Start Menu</strong>, search for “Edit the system
+environment variables” and open it.</li>
+<li>Click <strong>Environment Variables</strong>….</li>
+<li>Under <strong>System variables</strong>, find and select the
+<strong>Path</strong> variable, then click <strong>Edit</strong>.</li>
+<li>Click <strong>New</strong> and add the path to the
+<strong>bin</strong> directory, e.g.: C:\ffmpeg\bin</li>
+<li>Click <strong>OK</strong> to close all dialogs.</li>
+<li><strong>Restart</strong> any open Command Prompts or R sessions so
+they pick up the new PATH.</li>
+</ol></li>
+<li><p>Increase the playback speed of the audio file (previously saved
+as ‘output.mp3’). Edit the speed as you choose with “atempo”.</p></li>
+</ol>
+<pre class="r"><code>ffmpeg_path &lt;- &quot;C:/ffmpeg/bin/ffmpeg.exe&quot;
+system(sprintf(&#39;&quot;%s&quot; -y -i output.mp3 -filter:a &quot;atempo=2&quot; &quot;%s&quot;&#39;, 
+                 ffmpeg_path, 
+                 &quot;faster_output.mp3&quot;))
+  file.remove(&quot;output.mp3&quot;)</code></pre>
+</div>
+</div>
+<div id="example" class="section level1">
+<h1>Example</h1>
+<p><a href="https://github.com/joshmartinecon/aea-abstract-web-scraper/blob/main/wiley%20abstract%20webscraper.R">Source
+Code</a></p>
 </div>
 
 

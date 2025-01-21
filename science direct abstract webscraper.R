@@ -1,13 +1,15 @@
-rm(list=ls())
+
 library(RSelenium)
 library(rvest)
+library(httr)
+library(reticulate)
 
 # Step 1: Start the RSelenium server
-rD <- rsDriver(browser = "firefox", port = 4545L, verbose = FALSE)
+rD <- rsDriver(browser = "firefox", port = 4544L, verbose = FALSE)
 remDr <- rD$client
 
 # Step 2: Input the URL for the science direct issue you want to read
-initial_url <- "https://www.sciencedirect.com/journal/journal-of-urban-economics/vol/143/"
+initial_url <- "https://www.sciencedirect.com/journal/journal-of-urban-economics/vol/145/"
 remDr$navigate(initial_url)
 
 # Step 3: prove you're not a robot!
@@ -17,7 +19,12 @@ setwd("C:/Users/jmart/Downloads")
 
 # Step 5: Do you want R to open the links to the articles from this issue in a web browser?
 ## Y = Yes, N = No
-open_in_browser <- "Y/N"
+open_in_browser <- "Y"
+
+# Step 6: Do you want to convert the text to mp3?
+## If so, please see the repository page for the required installation steps
+## https://github.com/joshmartinecon/journal-abstract-webscraper/blob/main/wiley%20abstract%20webscraper.R
+output_as_mp3 <- "N"
 
 ##### code ######
 
@@ -34,7 +41,7 @@ linkz <- unique(linkz)
 
 # loop web scrape
 y <- list()
-for(i in 2:length(linkz)){
+for(i in 1:length(linkz)){
   remDr$navigate(paste0("https://www.sciencedirect.com", linkz[i]))
   Sys.sleep(5)
   page_source <- remDr$getPageSource()[[1]]
@@ -73,6 +80,8 @@ for(i in 2:length(linkz)){
     gsub("Abstract", "", .) %>%
     .[1]
   
+  abstract <- gsub("\\s*\\(JEL.*\\)$", "", abstract)
+  
   if(length(title) > 0 & length(authors) > 0 & !is.na(abstract)){
     y[[length(y)+1]] <-  paste(title, authors, abstract)
   }
@@ -81,15 +90,26 @@ for(i in 2:length(linkz)){
 remDr$close()
 rD$server$stop()
 
-# save text
-writeLines(unlist(y), con = paste0(gsub("/", ".", 
-                                        gsub("https://www.sciencedirect.com", "", initial_url)), 
-                                   ".txt"))
-
 # open in browser
 if(open_in_browser == "Y"){
   for(i in 1:length(linkz)){
     browseURL(paste0("https://www.sciencedirect.com", linkz[i]))
     Sys.sleep(3)
   }
+}
+
+# save output as mp3 or txt
+if(output_as_mp3 == "N"){
+  # save text
+  writeLines(paste(unlist(y), collapse = ". "), con = paste0(name, ".txt"))
+}else{
+  gTTS <- import("gtts")
+  tts <- gTTS$gTTS(paste(unlist(y), collapse = " "), lang = "en")
+  tts$save("output.mp3")
+  
+  ffmpeg_path <- "C:/ffmpeg/bin/ffmpeg.exe"
+  system(sprintf('"%s" -y -i output.mp3 -filter:a "atempo=2" "%s"', 
+                 ffmpeg_path, 
+                 paste0(name, ".mp3")))
+  file.remove("output.mp3")
 }
