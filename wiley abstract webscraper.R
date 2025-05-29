@@ -3,9 +3,10 @@ rm(list=ls())
 library(rvest)
 library(httr)
 library(reticulate)
+library(RSelenium)
 
 # Step 1: Input the URL for the issue you want to read
-initial_url <- "https://onlinelibrary.wiley.com/toc/23258012/2025/91/3"
+initial_url <- "https://onlinelibrary.wiley.com/toc/23258012/2025/91/4"
 
 # Step 2: Put the abbreviation of the journal title (for name of .txt file)
 abbreviation <- "SEJ"
@@ -26,13 +27,27 @@ output_as_mp3 <- "Y"
 
 # Parse the HTML and extract links
 ## may have to run this again if you hit a 403 error
-linkz <- read_html(initial_url) %>%
+# Start RSelenium
+rD <- rsDriver(browser = "firefox", port = 4567L, verbose = FALSE)
+remDr <- rD$client
+
+# Go to the URL
+remDr$navigate("https://onlinelibrary.wiley.com/toc/23258012/2025/91/4")
+
+# Get page source after JS has rendered
+page_source <- remDr$getPageSource()[[1]]
+html <- read_html(page_source)
+
+# Extract links
+linkz <- html %>%
   html_nodes("a") %>%
   html_attr("href") %>%
   .[grepl("/doi/", .)]
 linkz <- unique(linkz)
 linkz <- linkz[!grepl("https|/full/|#reference|/epdf/|/abs/", linkz)]
 linkz <- paste0(paste0(strsplit(initial_url, "\\.com")[[1]][1], ".com"), linkz)
+remDr$close()
+rD$server$stop()
 
 # loop web scrape
 y <- list()
@@ -89,7 +104,7 @@ for(i in 1:length(linkz)){
 if(open_in_browser == "Y"){
   for(i in 1:length(linkz)){
     browseURL(linkz[i])
-    Sys.sleep(3)
+    Sys.sleep(1)
   }
 }
 
